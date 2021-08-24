@@ -36,23 +36,21 @@ public class RoadAddrApiController {
     @ApiOperation(value="조회할 도로명 주소(전체 or 일부)", notes="(도로명 주소의 일부 정보 or 정확한 주소)로 해당하는 도로명주소를 조회합니다.")
     @GetMapping(value="/roadAddr")  // API 를 호출하기 위한 주소 값이며 상위 주소의 하위주소값입니다. 예: http://localhost:8080/api/roadAddr)
     @ApiImplicitParams({
-           @ApiImplicitParam(name = "searchRoadAddr", value = "검색할 도로명", required = true, dataType = "String", defaultValue = ""),
-           @ApiImplicitParam(name = "searchRoadAddrBldgNumber", value = "검색할 빌딩명", required = false, dataType = "String", defaultValue = "")
+            @ApiImplicitParam(name = "searchRoadAddr", value = "검색할 도로명", required = true, dataType = "String", defaultValue = ""),
+            @ApiImplicitParam(name = "searchRoadAddrBldgNumber", value = "검색할 빌딩명", required = false, dataType = "String", defaultValue = "")
     })
     public ResponseEntity<?> getRoadAddr(@RequestParam(value = "searchRoadAddr") String searchRoadAddress
-                                        ,@RequestParam(value = "searchRoadAddrBldgNumber", required = false)  String searchBldgNumber) {
-
+            ,@RequestParam(value = "searchRoadAddrBldgNumber", required = false)  String searchBldgNumber) {
 
         Integer buildingMainNumber = 0;      // DB에 조회하기 위한 도로명주소 건물본번
         Integer buildingSubNumber = 0;       // DB에 조회하기 위한 도로명주소 건물부번
 
         HttpStatus resultStatus = HttpStatus.OK;   // 기본적으로 정상적으로 조회가 된다는 가정하에 반환하는 HTTP Status 값은 200 (OK) 입니다.
 
-        List<RoadAddress> searchResultList;  // DB 조회 후 값이 있을 경우 RoadAddress 객체의 값 List 입니다.
-
+        List<RoadAddress> searchResultList = new ArrayList<>();  // DB 조회 후 값이 있을 경우 RoadAddress 객체의 값 List 입니다.
         Map<String,Object> returnMap = new HashMap<>();          // 실제 API Return 되는 값이 들어가는 Map 객체 입니다.
 
-        int searchResultListSize = 0; // 최종적으로 DB에서 도로명 주소를 찾은 결과의 갯수
+        int searchResultListSize = 0;   // 최종적으로 DB에서 도로명 주소를 찾은 결과의 갯수
 
         // 실행중 예외발생을 탐지하기 위하여
         try {
@@ -64,40 +62,38 @@ public class RoadAddrApiController {
              2-3. 만약 searchBldgNumber 가 입력되고, 그 값에 '-' 이 포함되면 '건물 본번 - 건물 부번' 인 형태입니다.
              */
             // searchBldgNumber null 이 아니면 건물번호가 입력된 것 입니다.
-            if (searchBldgNumber != null) {
-
+            if ( searchBldgNumber != null) {
                 // 건물번호가 본번 형태인지 부번 형태인지 '-' 을 기준으로 확인해야 합니다.
-                if(!searchBldgNumber.contains("-")){
-                    // 건물번호가 본번만 입력된 형태라면 (예 : 흑석로 84)
+                if(!(searchBldgNumber.contains("-"))){
 
+                    // 건물번호가 본번만 입력된 형태라면 (예 : 흑석로 84)
                     // 건물번호가 문자로 되어 있으므로 숫자로 바꿔야 합니다. (DB는 숫자컬럼으로 되어 있음)
                     buildingMainNumber = Integer.parseInt(searchBldgNumber);
-
                     // 도로명 검색어를 Like 로 하여 건물번호가 일치하는 도로명 주소를 찾습니다.
-                    searchResultList = roadAddrRepository.findByRoadNameStartingWithAndBldgMainNo(searchRoadAddress, buildingMainNumber);
+                    searchResultList = roadAddrRepository.findByRoadNameStartingWithAndBldgMainNo(searchRoadAddress,buildingMainNumber);
 
-
-                }else{ // 건물번호가 본번,부번 모두 입력된 형태라면 (예 : 흑석로 84-116)
-
+                }else{
+                    // 건물번호가 본번,부번 모두 입력된 형태라면 (예 : 흑석로 84-116)
                     // 건물번호(본번/부번)이 문자로 되어 있으므로 숫자로 바꿔야 합니다. (DB는 숫자컬럼으로 되어 있음)
-                    String [] Bld_main_sub_split = searchBldgNumber.split("-");
-                    buildingMainNumber = Integer.parseInt(Bld_main_sub_split[0]);
-                    buildingSubNumber = Integer.parseInt(Bld_main_sub_split[1]);
+
+                    String str_split[] = searchBldgNumber.split("-");
+                    buildingMainNumber = Integer.parseInt(str_split[0]);
+                    buildingSubNumber = Integer.parseInt(str_split[1]);
 
                     // 도로명 검색어를 = 로 하여 건물본번, 건물부번 모두가 일치하는 도로명 주소를 찾습니다.
-
-                    searchResultList = roadAddrRepository.findByRoadNameAndBldgMainNoAndBldgSubNo(searchRoadAddress, buildingMainNumber, buildingSubNumber);
+                    searchResultList = roadAddrRepository.findByRoadNameAndBldgMainNoAndBldgSubNo(searchRoadAddress,buildingMainNumber,buildingSubNumber);
 
                 }
-
-
+                searchResultListSize = searchResultList.size();
 
             }
+
             // searchBldgNumber null 이면 도로명 검색어만 입력된 것입니다.
             else {
 
                 // 도로명 검색어를 Like 로 하여 도로명 주소를 찾습니다.
                 searchResultList = roadAddrRepository.findByRoadNameStartingWith(searchRoadAddress);
+                searchResultListSize = searchResultList.size();
 
             }
 
@@ -107,14 +103,10 @@ public class RoadAddrApiController {
             }
 
             returnMap.put(resMsg, "정상처리되었습니다.");    // return 메세지는 "정상" 으로 하고
-            returnMap.put(resRoadAddr, null);  // return 주소정보는 조회 결과를 넣습니다.
-            returnMap.put(resCnt, null); // return 건수정보는 조회 결과의 건수를 넣습니다.
+            returnMap.put(resRoadAddr, searchResultList);  // return 주소정보는 조회 결과를 넣습니다.
+            returnMap.put(resCnt, searchResultListSize); // return 건수정보는 조회 결과의 건수를 넣습니다.
 
-            /*
-             * 아래 코드는 강제로 예외를 만드는 코드입니다. 테스트를 위해서 넣어놨는데 처음에 push 할때 빼는걸 깜빡했네요 ㅎㅎㅎ
-             * by 1004-1
-             */
-            throw new Exception();
+            //throw new Exception();
         }
         // 실행중 예외가 발생할 경우
         catch (Exception e) {
@@ -123,13 +115,12 @@ public class RoadAddrApiController {
 
             resultStatus = HttpStatus.SERVICE_UNAVAILABLE;    // HTTP Status 코드는 SERVICE_UNAVAILABLE 로 합니다. (503)
             returnMap.put(resMsg, "오류가 발생하였습니다.");      // return 메세지는 "오류발생" 으로 하고
-            returnMap.put(resRoadAddr, "");                   // return 주소정보는 빈 값을 넣습니다.
-            returnMap.put(resCnt, 0);                         // return 건수정보는 0 건으로 넣습니다.
+            returnMap.put(resRoadAddr,null);                  // return 주소정보는 빈 값을 넣습니다.
+            returnMap.put(resCnt,0);                          // return 건수정보는 0 건으로 넣습니다.
         }
         // 예외여부 상관없이 최종적으로 수행.
         finally {
             entity = new ResponseEntity<>(returnMap, resultStatus);  // 최종적으로 API 결과 ResponseEntity 객체를 생성합니다.
-
             return entity;  // API 반환.
         }
     }
