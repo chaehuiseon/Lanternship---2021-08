@@ -110,6 +110,10 @@ public class RoadAddrApiController {
             returnMap.put(resRoadAddr, null);  // return 주소정보는 조회 결과를 넣습니다.
             returnMap.put(resCnt, null); // return 건수정보는 조회 결과의 건수를 넣습니다.
 
+            /*
+             * 아래 코드는 강제로 예외를 만드는 코드입니다. 테스트를 위해서 넣어놨는데 처음에 push 할때 빼는걸 깜빡했네요 ㅎㅎㅎ
+             * by 1004-1
+             */
             throw new Exception();
         }
         // 실행중 예외가 발생할 경우
