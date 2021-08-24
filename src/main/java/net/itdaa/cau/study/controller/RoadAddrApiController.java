@@ -70,18 +70,21 @@ public class RoadAddrApiController {
                     // 건물번호가 문자로 되어 있으므로 숫자로 바꿔야 합니다. (DB는 숫자컬럼으로 되어 있음)
                     buildingMainNumber = Integer.parseInt(searchBldgNumber);
                     // 도로명 검색어를 Like 로 하여 건물번호가 일치하는 도로명 주소를 찾습니다.
-                    searchResultList = roadAddrRepository.findByRoadNameStartingWithAndBldgMainNo(searchRoadAddress,buildingMainNumber);
+                    searchResultList = roadAddrRepository.findByRoadNameStartingWithAndBldgMainNo(searchRoadAddress.replaceAll("\\p{Z}",""),buildingMainNumber);
 
                 }else{
+
+                    //띄어쓰기 가능 하도록 ( ex : 7 -1, 7 - 1 ...등 가능 )
+                    searchBldgNumber = searchBldgNumber.replaceAll("\\p{Z}","");
+
                     // 건물번호가 본번,부번 모두 입력된 형태라면 (예 : 흑석로 84-116)
                     // 건물번호(본번/부번)이 문자로 되어 있으므로 숫자로 바꿔야 합니다. (DB는 숫자컬럼으로 되어 있음)
-
                     String str_split[] = searchBldgNumber.split("-");
                     buildingMainNumber = Integer.parseInt(str_split[0]);
                     buildingSubNumber = Integer.parseInt(str_split[1]);
 
                     // 도로명 검색어를 = 로 하여 건물본번, 건물부번 모두가 일치하는 도로명 주소를 찾습니다.
-                    searchResultList = roadAddrRepository.findByRoadNameAndBldgMainNoAndBldgSubNo(searchRoadAddress,buildingMainNumber,buildingSubNumber);
+                    searchResultList = roadAddrRepository.findByRoadNameAndBldgMainNoAndBldgSubNo(searchRoadAddress.replaceAll("\\p{Z}",""),buildingMainNumber,buildingSubNumber);
 
                 }
                 searchResultListSize = searchResultList.size();
@@ -92,7 +95,7 @@ public class RoadAddrApiController {
             else {
 
                 // 도로명 검색어를 Like 로 하여 도로명 주소를 찾습니다.
-                searchResultList = roadAddrRepository.findByRoadNameStartingWith(searchRoadAddress);
+                searchResultList = roadAddrRepository.findByRoadNameStartingWith(searchRoadAddress.replaceAll("\\p{Z}",""));
                 searchResultListSize = searchResultList.size();
 
             }
